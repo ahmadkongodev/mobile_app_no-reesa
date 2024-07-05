@@ -1,44 +1,67 @@
+
 import 'dart:io';
-
 import 'package:flutter/material.dart';
-
+import 'package:get/get.dart';
+import 'package:no_reesa/controllers/controller.dart';
 import 'package:wave/wave.dart';
-import 'package:wave/config.dart';
-
-import 'package:just_audio/just_audio.dart';
+import 'package:wave/config.dart'; 
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
-
 import '../service.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class HomeScreen extends StatelessWidget {
+  HomeScreen({super.key});
 
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  ApiService apiService = ApiService();
+  final ApiService apiService = ApiService();
   final AudioRecorder audioRecorder = AudioRecorder();
-  final AudioPlayer audioPlayer = AudioPlayer();
 
-  String? recordingPath;
-  String? translated_odio;
-  bool isRecording = false, isPlaying = false;
+  Future<void> stopRecordingAndSave() async {
+    // récupérer le lien de l'audio enregistré
+    String? filePath = await audioRecorder.stop();
+    if (filePath != null) {
+      Controller.instance.setRecordingFalse();
+      Controller.instance.setRecordingPath(filePath);
+      doMooreToEnglishPrediction();
+    }
+  }
+
+  Future<void> record() async {
+    if (await audioRecorder.hasPermission()) {
+      final Directory appDocumentsDir = await getApplicationDocumentsDirectory();
+      final String filePath = p.join(appDocumentsDir.path, "recording.wav");
+
+      await audioRecorder.start(
+        const RecordConfig(encoder: AudioEncoder.wav),
+        path: filePath,
+      );
+      
+      Controller.instance.setRecordingTrue();
+    }
+  }
+
+  Future<void> doMooreToEnglishPrediction() async {
+    String recordingPath = Controller.instance.recordingPath.value;
+    File audioFile = File(recordingPath);
+    final File translatedAudioFile = await apiService.predict_moore_english_Audio(audioFile);
+    Controller.instance.setTranslatedAudioPath(translatedAudioFile.path); 
+  }
+   
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-          backgroundColor: Colors.blue,
-          title: const Text(
-            'No-Reesa',
-            style: TextStyle(
-                fontSize: 24.0,
-                fontWeight: FontWeight.bold,
-                color: Colors.white),
-          )),
+        backgroundColor: Colors.blue,
+        title: const Text(
+          'No-Reesa',
+          style: TextStyle(
+            fontSize: 24.0,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+      ),
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
@@ -48,102 +71,66 @@ class _HomeScreenState extends State<HomeScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                //si il ya un lien vers un audio
-                if (translated_odio != null)
-                  ElevatedButton(
-                    onPressed: () async {
-                       
-                        await audioPlayer.setFilePath(translated_odio!);
-                        audioPlayer.play();
-                        setState(() {
-                          isPlaying = true;
-                        });
-                      
-                    },
-                    child: Icon(isPlaying ? Icons.stop : Icons.translate),
-                  ),
-                if (translated_odio == null)
-                  const Text(
-                    "No translate Found. :(",
-                  ),
+                Obx(() => Controller.instance.translatedAudio.value.isEmpty
+                    ? const Text("No translate Found. :(")
+                    : Container()),
               ],
             ),
-            // si on est entrain d'enregistrer, il fau faire les amplitude
-            if (isRecording)
-              WaveWidget(
-                config: CustomConfig(
-                  gradients: [
-                    [Colors.lightBlueAccent, Colors.blue],
-                  ],
-                  durations: [500],
-                  heightPercentages: [0.5],
-                ),
-                size: const Size(300, 100),
-                waveAmplitude: 1,
-              ),
+            Obx(() => Controller.instance.isRecording.value
+                ? const DisplayWaves()
+                : Container()),
             const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 FloatingActionButton(
                   onPressed: () async {
-                    // si entrain denregistrer, il faut arreter l'enregistrement
-                    if (isRecording) {
-                      //recuperer le lien de l'audio enreistrer
-                      String? filePath = await audioRecorder.stop();
-                      if (filePath != null) {
-                        setState(() {
-                          isRecording = false;
-                          //apres avoir stopper lenregistrement on a le lien vers le fichier audio enregistrer
-                          recordingPath = filePath;
-                        });
-                      }
-                    }
-                    // si on est pa entrain denregistrer, il faut arreter l'enregistrement
-                    else {
-                      //prendre la permission pour enregistrer
-                      if (await audioRecorder.hasPermission()) {
-                        final Directory appDocumentsDir =
-                            await getApplicationDocumentsDirectory();
-                        final String filePath =
-                            p.join(appDocumentsDir.path, "recording.wav");
-
-                        await audioRecorder.start(
-                          const RecordConfig(encoder: AudioEncoder.wav),
-                          path: filePath,
-                        );
-                        setState(() {
-                          isRecording = true;
-                          //pendant lenregistrement le lien vers le fichier est nulle
-                          recordingPath = null;
-                        });
-                      }
+                    if (Controller.instance.isRecording.value) {
+                      await stopRecordingAndSave();
+                    } else {
+                      await record();
                     }
                   },
-                  child: Icon(
-                    isRecording ? Icons.stop : Icons.mic,
-                  ),
+                  child: Obx(() => Icon(
+                        Controller.instance.isRecording.value
+                            ? Icons.stop
+                            : Icons.mic,
+                      )),
                 ),
                 FloatingActionButton(
                   onPressed: () async {
-                    File audioFile = File(recordingPath!);
-                    print("odio $recordingPath");
-                    final File translatedAudioFile =
-                        await apiService.predict_moore_english_Audio(audioFile);
-
-                    setState(() {
-                      translated_odio = translatedAudioFile.path;
-                    });
+                    await doMooreToEnglishPrediction();
                   },
                   backgroundColor: Colors.lightBlueAccent,
-                  child: const Icon(Icons.headphones,
-                      size: 24), // Headphones icon button
+                  child: const Icon(
+                    Icons.headphones,
+                    size: 24,
+                  ),
                 ),
               ],
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class DisplayWaves extends StatelessWidget {
+  const DisplayWaves({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return WaveWidget(
+      config: CustomConfig(
+        gradients: [
+          [Colors.lightBlueAccent, Colors.blue],
+        ],
+        durations: [500],
+        heightPercentages: [0.5],
+      ),
+      size: const Size(300, 100),
+      waveAmplitude: 1,
     );
   }
 }
