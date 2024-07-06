@@ -14,14 +14,18 @@ class HomeScreen extends StatelessWidget {
   HomeScreen({super.key});
 
   final ApiService apiService = ApiService();
-  final AudioRecorder audioRecorder = AudioRecorder();
+  final AudioRecorder  audioRecorder = AudioRecorder();
+  final AudioRecorder audioRecorder2 = AudioRecorder();
 
+  //Functions for moore to English
   Future<void> stopRecordingAndSave() async {
+    print("stop recording and save");
     // récupérer le lien de l'audio enregistré
     String? filePath = await audioRecorder.stop();
     if (filePath != null) {
       Controller.instance.setRecordingFalse();
       Controller.instance.setRecordingPath(filePath);
+       
       doMooreToEnglishPrediction();
     }
   }
@@ -41,12 +45,71 @@ class HomeScreen extends StatelessWidget {
   }
 
   Future<void> doMooreToEnglishPrediction() async {
+        print("doMooreToEnglishPrediction");
+
     String recordingPath = Controller.instance.recordingPath.value;
     File audioFile = File(recordingPath);
-    final File translatedAudioFile = await apiService.predict_moore_english_Audio(audioFile);
+    final File translatedAudioFile = await apiService.predictMooreToEnglish(audioFile);
     Controller.instance.setTranslatedAudioPath(translatedAudioFile.path); 
   }
    
+  // Functions for English to moore
+  
+  Future<void> stopRecordingAndSave2() async {
+    // récupérer le lien de l'audio enregistré
+    print("in stop and record");
+    String? filePath = await audioRecorder2.stop();
+    if (filePath != null) {
+      print("file path exist $filePath");
+      Controller.instance.setRecordingFalse2();
+      Controller.instance.setRecordingPath2(filePath); 
+      doEnglishToMoorePrediction();
+    }
+  }
+
+  Future<void> record2() async {
+    if (await audioRecorder2.hasPermission()) {
+      final Directory appDocumentsDir = await getApplicationDocumentsDirectory();
+      final String filePath = p.join(appDocumentsDir.path, "audio_anglais.wav");
+
+      await audioRecorder2.start(
+        const RecordConfig(encoder: AudioEncoder.wav),
+        path: filePath,
+      );
+      
+      Controller.instance.setRecordingTrue2();
+    }
+  }
+
+  // Future<void> doEnglishToMoorePrediction() async {
+  //   String recordingPath = Controller.instance.recordingPath2.value;
+  //   File audioFile = File(recordingPath);
+  //   final File translatedAudioFile = await apiService.predictEnglishToMoore(audioFile);
+  //   Controller.instance.setTranslatedAudioPath2(translatedAudioFile.path); 
+  // } 
+  Future<void> doEnglishToMoorePrediction() async {
+  String recordingPath = Controller.instance.recordingPath2.value;
+  print("Recording path for English to Moore: $recordingPath");
+
+  if (recordingPath.isEmpty) {
+    print("Recording path is empty.");
+    return;
+  }
+
+  File audioFile = File(recordingPath);
+  if (!audioFile.existsSync()) {
+    print("Audio file does not exist at path: $recordingPath");
+    return;
+  }
+
+  try {
+    final File translatedAudioFile = await apiService.predictEnglishToMoore(audioFile);
+    print("Translated audio file path: ${translatedAudioFile.path}");
+    Controller.instance.setTranslatedAudioPath2(translatedAudioFile.path);
+  } catch (e) {
+    print("Error during English to Moore prediction: $e");
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -71,12 +134,13 @@ class HomeScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Obx(() => Controller.instance.translatedAudio.value.isEmpty
+                Obx(() =>   Controller.instance.recordingPath.value.isEmpty
                     ? const Text("No translate Found. :(")
-                    : Container()),
+                    : Container(
+                     )),
               ],
             ),
-            Obx(() => Controller.instance.isRecording.value
+            Obx(() => Controller.instance.isRecording.value || Controller.instance.isRecording2.value
                 ? const DisplayWaves()
                 : Container()),
             const SizedBox(height: 20),
@@ -99,13 +163,18 @@ class HomeScreen extends StatelessWidget {
                 ),
                 FloatingActionButton(
                   onPressed: () async {
-                    await doMooreToEnglishPrediction();
+                      if (Controller.instance.isRecording2.value) {
+                      await stopRecordingAndSave2();
+                    } else {
+                      await record2();
+                    }
                   },
                   backgroundColor: Colors.lightBlueAccent,
-                  child: const Icon(
-                    Icons.headphones,
-                    size: 24,
-                  ),
+                   child: Obx(() => Icon(
+                        Controller.instance.isRecording2.value
+                            ? Icons.stop
+                            : Icons.headphones,
+                      )),
                 ),
               ],
             ),
