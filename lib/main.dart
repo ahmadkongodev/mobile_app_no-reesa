@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:no_reesa/controllers/controller.dart';
-import 'package:no_reesa/screens/welcome.dart';
+import 'package:no_reesa/controllers/controller.dart'; 
+
+import 'screens/home.dart';
 
 void main() {
   Get.put(Controller());
@@ -20,7 +21,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: WelcomePage(),
+      home: HomeScreen(),
     );
   }
 }

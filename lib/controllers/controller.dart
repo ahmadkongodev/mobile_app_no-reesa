@@ -1,4 +1,5 @@
  
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart';
 
@@ -76,8 +77,7 @@ class Controller extends GetxController {
   }
   
   Future<void>   playAudio(String path) async {
-           print("playing");
-
+ 
     if (path.isNotEmpty) {
       await audioPlayer.setFilePath(path);
       await audioPlayer.play();
@@ -85,8 +85,22 @@ class Controller extends GetxController {
       setTranslatedAudioPathToNull();
       }
   }
+
+  
+void showErrorDialog(String message) {
+    Get.defaultDialog(
+      title: "Error",
+      middleText: message,
+      textConfirm: "OK",
+      confirmTextColor: Colors.red,
+      onConfirm: () {
+        Get.back();
+      },
+    );
+  }
    
 }
 
 final AudioPlayer audioPlayer = AudioPlayer();
 final AudioPlayer audioPlayer2 = AudioPlayer();
+
