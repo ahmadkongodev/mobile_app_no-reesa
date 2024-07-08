@@ -1,10 +1,10 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:lottie/lottie.dart';
 import 'package:no_reesa/constants.dart';
 import 'package:no_reesa/controllers/controller.dart';
-import 'package:wave/wave.dart';
-import 'package:wave/config.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
@@ -16,10 +16,12 @@ class HomeScreen extends StatelessWidget {
   final ApiService apiService = ApiService();
   final AudioRecorder audioRecorder = AudioRecorder();
   final AudioRecorder audioRecorder2 = AudioRecorder();
+  final List<double> wavePoints =
+      List.generate(100, (index) => Random().nextDouble() * 2 - 1);
+
   //Functions for moore to English
   Future<void> stopRecordingAndSave() async {
-    print("stop recording and save");
-    // récupérer le lien de l'audio enregistré
+     // récupérer le lien de l'audio enregistré
     String? filePath = await audioRecorder.stop();
     if (filePath != null) {
       Controller.instance.setRecordingFalse();
@@ -45,8 +47,7 @@ class HomeScreen extends StatelessWidget {
   }
 
   Future<void> doMooreToEnglishPrediction() async {
-    print("doMooreToEnglishPrediction");
-
+ 
     String recordingPath = Controller.instance.recordingPath.value;
     File audioFile = File(recordingPath);
     final File translatedAudioFile =
@@ -58,11 +59,9 @@ class HomeScreen extends StatelessWidget {
 
   Future<void> stopRecordingAndSave2() async {
     // récupérer le lien de l'audio enregistré
-    print("in stop and record");
-    String? filePath = await audioRecorder2.stop();
+     String? filePath = await audioRecorder2.stop();
     if (filePath != null) {
-      print("file path exist $filePath");
-      Controller.instance.setRecordingFalse2();
+       Controller.instance.setRecordingFalse2();
       Controller.instance.setRecordingPath2(filePath);
       doEnglishToMoorePrediction();
     }
@@ -85,26 +84,24 @@ class HomeScreen extends StatelessWidget {
 
   Future<void> doEnglishToMoorePrediction() async {
     String recordingPath = Controller.instance.recordingPath2.value;
-    print("Recording path for English to Moore: $recordingPath");
-
+ 
     if (recordingPath.isEmpty) {
-      print("Recording path is empty.");
+     Controller.instance.showErrorDialog("erreur");
       return;
     }
 
     File audioFile = File(recordingPath);
     if (!audioFile.existsSync()) {
-      print("Audio file does not exist at path: $recordingPath");
+     Controller.instance.showErrorDialog("erreur");
       return;
     }
 
     try {
       final File translatedAudioFile =
           await apiService.predictEnglishToMoore(audioFile);
-      print("Translated audio file path: ${translatedAudioFile.path}");
-      Controller.instance.setTranslatedAudioPath2(translatedAudioFile.path);
+       Controller.instance.setTranslatedAudioPath2(translatedAudioFile.path);
     } catch (e) {
-      print("Error during English to Moore prediction: $e");
+     Controller.instance.showErrorDialog("erreur");
     }
   }
 
@@ -126,9 +123,8 @@ class HomeScreen extends StatelessWidget {
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
-           children: <Widget>[
+          children: <Widget>[
             Column(
-               
               children: [
                 Container(
                   child: Stack(children: [
@@ -142,31 +138,45 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                     ClipPath(
-                        clipper: WaveClipper(),
-                        child: Container(
-                          color: niceColor,
-                          height: 180,
-                        ),
+                    ClipPath(
+                      clipper: WaveClipper(),
+                      child: Container(
+                        color: niceColor,
+                        height: 180,
                       ),
+                    ),
                   ]),
                 ),
-                Obx(() => Controller.instance.recordingPath.value.isEmpty
-                    ? const Text("No translate Found. :(")
-                    : Container()),
+                Obx(() => Controller.instance.isRecording.value ||
+                      Controller.instance.isRecording2.value ||
+                      Controller.instance.isPlaying.value ||
+                      Controller.instance.isPlaying2.value
+                    ? Container()
+                    : Image.asset("assets/voice.jpg", width: 300, height: 300,)),
               ],
             ),
             Obx(() => Controller.instance.isRecording.value ||
-                    Controller.instance.isRecording2.value
-                ? const DisplayWaves()
+                    Controller.instance.isRecording2.value ||
+                    Controller.instance.isPlaying.value ||
+                    Controller.instance.isPlaying2.value
+                ? Lottie.asset(
+                    "assets/Animation.json",
+                    repeat: true,
+                  )
                 : Container()),
-              SizedBox(height: MediaQuery.of(context).size.height* 0.3),
-
+            Obx(
+              () => Controller.instance.isRecording.value ||
+                      Controller.instance.isRecording2.value ||
+                      Controller.instance.isPlaying.value ||
+                      Controller.instance.isPlaying2.value
+                  ? SizedBox(height: MediaQuery.of(context).size.height * 0)
+                  : SizedBox(height: MediaQuery.of(context).size.height * 0.1),
+            ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 InkWell(
-                    onTap: () async {
+                  onTap: () async {
                     if (Controller.instance.isRecording.value) {
                       await stopRecordingAndSave();
                     } else {
@@ -174,49 +184,47 @@ class HomeScreen extends StatelessWidget {
                     }
                   },
                   child: Ink(
-                    decoration: BoxDecoration(color: niceColor,
-                        borderRadius: BorderRadius.circular(50)
-                       ),
+                    decoration: BoxDecoration(
+                        color: niceColor,
+                        borderRadius: BorderRadius.circular(50)),
                     child: Container(
                       height: 100,
                       width: 100,
-                       
                       child: Obx(() => Icon(
-                          Controller.instance.isRecording.value
-                              ? Icons.stop
-                              : Icons.mic,
-                          color: Colors.white,
-                          size: 60,
-                        )),
+                            Controller.instance.isRecording.value
+                                ? Icons.stop
+                                : Icons.mic,
+                            color: Colors.white,
+                            size: 60,
+                          )),
                     ),
                   ),
                 ),
-                 InkWell(
-                    onTap: () async {
-                   if (Controller.instance.isRecording2.value) {
+                InkWell(
+                  onTap: () async {
+                    if (Controller.instance.isRecording2.value) {
                       await stopRecordingAndSave2();
                     } else {
                       await record2();
                     }
                   },
                   child: Ink(
-                     decoration: BoxDecoration(color: niceColor,
-                        borderRadius: BorderRadius.circular(50)
-                       ),
+                    decoration: BoxDecoration(
+                        color: niceColor,
+                        borderRadius: BorderRadius.circular(50)),
                     child: Container(
                       height: 100,
-                      width: 100,    
+                      width: 100,
                       child: Obx(() => Icon(
-                          Controller.instance.isRecording2.value
-                              ? Icons.stop
-                              : Icons.headphones,
-                          color: Colors.white,
-                          size: 60,
-                        )),
+                            Controller.instance.isRecording2.value
+                                ? Icons.stop
+                                : Icons.headphones,
+                            color: Colors.white,
+                            size: 60,
+                          )),
                     ),
                   ),
                 ),
-                
               ],
             ),
           ],
@@ -226,30 +234,10 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-class DisplayWaves extends StatelessWidget {
-  const DisplayWaves({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return WaveWidget(
-      config: CustomConfig(
-        gradients: [
-          [Colors.lightBlueAccent, Colors.blue],
-        ],
-        durations: [500],
-        heightPercentages: [0.5],
-      ),
-      size: const Size(300, 100),
-      waveAmplitude: 1,
-    );
-  }
-}
-
 class WaveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
-    debugPrint(size.width.toString());
-    var path = new Path();
+     var path = new Path();
     path.lineTo(0, size.height); //start path with this if you a
     var firstStart = Offset(size.width / 5, size.height);
 //fist point of quadratic bezier curve

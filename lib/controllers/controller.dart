@@ -1,7 +1,7 @@
  
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:just_audio/just_audio.dart';
+import 'package:just_audio/just_audio.dart'; 
 
 import '../service.dart';
 
@@ -63,14 +63,13 @@ class Controller extends GetxController {
 
   Future<void>   playAudio2(String path) async {
     if (path.isNotEmpty) {
-    print("playing 2");
-    try {
+     try {
       await audioPlayer2.setFilePath(path);
       await audioPlayer2.play();
        setPlayingTrue2();
       setTranslatedAudioPathToNull2();
     } catch (e) {
-      print("erreur e:$e");
+      Controller.instance.showErrorDialog("erreur");
     }
       
     }
@@ -92,8 +91,8 @@ void showErrorDialog(String message) {
       title: "Error",
       middleText: message,
       textConfirm: "OK",
-      confirmTextColor: Colors.red,
-      onConfirm: () {
+      buttonColor: Colors.red,
+       onConfirm: () {
         Get.back();
       },
     );

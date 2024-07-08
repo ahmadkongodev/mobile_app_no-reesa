@@ -9,8 +9,7 @@ import 'controllers/controller.dart';
 class ApiService {
   Future<File> predictMooreToEnglish(File audioFile) async {
     try {
-      print("API");
-      final request =
+       final request =
           http.MultipartRequest('POST', Uri.parse(predictMooreEnglishUrl));
       request.files
           .add(await http.MultipartFile.fromPath('file', audioFile.path));
