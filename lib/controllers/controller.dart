@@ -66,7 +66,7 @@ class Controller extends GetxController {
      try {
       await audioPlayer2.setFilePath(path);
       await audioPlayer2.play();
-       setPlayingTrue2();
+      
       setTranslatedAudioPathToNull2();
     } catch (e) {
       Controller.instance.showErrorDialog("erreur");
@@ -80,8 +80,7 @@ class Controller extends GetxController {
     if (path.isNotEmpty) {
       await audioPlayer.setFilePath(path);
       await audioPlayer.play();
-      setPlayingTrue();
-      setTranslatedAudioPathToNull();
+       setTranslatedAudioPathToNull();
       }
   }
 

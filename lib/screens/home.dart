@@ -21,7 +21,7 @@ class HomeScreen extends StatelessWidget {
 
   //Functions for moore to English
   Future<void> stopRecordingAndSave() async {
-     // récupérer le lien de l'audio enregistré
+    // récupérer le lien de l'audio enregistré
     String? filePath = await audioRecorder.stop();
     if (filePath != null) {
       Controller.instance.setRecordingFalse();
@@ -47,7 +47,6 @@ class HomeScreen extends StatelessWidget {
   }
 
   Future<void> doMooreToEnglishPrediction() async {
- 
     String recordingPath = Controller.instance.recordingPath.value;
     File audioFile = File(recordingPath);
     final File translatedAudioFile =
@@ -59,9 +58,9 @@ class HomeScreen extends StatelessWidget {
 
   Future<void> stopRecordingAndSave2() async {
     // récupérer le lien de l'audio enregistré
-     String? filePath = await audioRecorder2.stop();
+    String? filePath = await audioRecorder2.stop();
     if (filePath != null) {
-       Controller.instance.setRecordingFalse2();
+      Controller.instance.setRecordingFalse2();
       Controller.instance.setRecordingPath2(filePath);
       doEnglishToMoorePrediction();
     }
@@ -84,24 +83,24 @@ class HomeScreen extends StatelessWidget {
 
   Future<void> doEnglishToMoorePrediction() async {
     String recordingPath = Controller.instance.recordingPath2.value;
- 
+
     if (recordingPath.isEmpty) {
-     Controller.instance.showErrorDialog("erreur");
+      Controller.instance.showErrorDialog("erreur");
       return;
     }
 
     File audioFile = File(recordingPath);
     if (!audioFile.existsSync()) {
-     Controller.instance.showErrorDialog("erreur");
+      Controller.instance.showErrorDialog("erreur");
       return;
     }
 
     try {
       final File translatedAudioFile =
           await apiService.predictEnglishToMoore(audioFile);
-       Controller.instance.setTranslatedAudioPath2(translatedAudioFile.path);
+      Controller.instance.setTranslatedAudioPath2(translatedAudioFile.path);
     } catch (e) {
-     Controller.instance.showErrorDialog("erreur");
+      Controller.instance.showErrorDialog("erreur");
     }
   }
 
@@ -148,11 +147,15 @@ class HomeScreen extends StatelessWidget {
                   ]),
                 ),
                 Obx(() => Controller.instance.isRecording.value ||
-                      Controller.instance.isRecording2.value ||
-                      Controller.instance.isPlaying.value ||
-                      Controller.instance.isPlaying2.value
+                        Controller.instance.isRecording2.value ||
+                        Controller.instance.isPlaying.value ||
+                        Controller.instance.isPlaying2.value
                     ? Container()
-                    : Image.asset("assets/voice.jpg", width: 300, height: 300,)),
+                    : Image.asset(
+                        "assets/voice.jpg",
+                        width: 300,
+                        height: 300,
+                      )),
               ],
             ),
             Obx(() => Controller.instance.isRecording.value ||
@@ -187,16 +190,22 @@ class HomeScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                         color: niceColor,
                         borderRadius: BorderRadius.circular(50)),
-                    child: Container(
-                      height: 100,
-                      width: 100,
-                      child: Obx(() => Icon(
-                            Controller.instance.isRecording.value
-                                ? Icons.stop
-                                : Icons.mic,
-                            color: Colors.white,
-                            size: 60,
-                          )),
+                    child: Obx(
+                      () => Container(
+                        height: 100,
+                        width: 100,
+                        child: Controller.instance.isRecording.value
+                            ? const Icon(Icons.stop)
+                            :   CircleAvatar(
+                              backgroundColor: niceColor,
+                              radius: 68,
+                              child: const CircleAvatar(
+                                  radius: 48, // Image radius
+                                  backgroundImage: AssetImage(
+                                      'assets/drapeau-burkina.jpg'),
+                                ),
+                            ),
+                      ),
                     ),
                   ),
                 ),
@@ -212,19 +221,24 @@ class HomeScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                         color: niceColor,
                         borderRadius: BorderRadius.circular(50)),
-                    child: Container(
+                    child: Obx(() => Container(
                       height: 100,
-                      width: 100,
-                      child: Obx(() => Icon(
+                      width: 100,                            
+                      child:   
                             Controller.instance.isRecording2.value
-                                ? Icons.stop
-                                : Icons.headphones,
-                            color: Colors.white,
-                            size: 60,
+                                ? const Icon(Icons.stop)
+                                :    CircleAvatar(
+                              backgroundColor: niceColor,
+                              radius: 68,
+                              child: const CircleAvatar(
+                                  radius: 48, // Image radius
+                                  backgroundImage: AssetImage(
+                                      'assets/drapeau-anglais.jpg'),
+                                ),
+                            ),
                           )),
                     ),
                   ),
-                ),
               ],
             ),
           ],
@@ -237,7 +251,7 @@ class HomeScreen extends StatelessWidget {
 class WaveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
-     var path = new Path();
+    var path = new Path();
     path.lineTo(0, size.height); //start path with this if you a
     var firstStart = Offset(size.width / 5, size.height);
 //fist point of quadratic bezier curve
