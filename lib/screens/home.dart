@@ -1,6 +1,5 @@
 import 'dart:io';
-import 'dart:math';
-import 'package:flutter/material.dart';
+ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 import 'package:no_reesa/constants.dart';
@@ -9,16 +8,11 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import '../service.dart';
-
 class HomeScreen extends StatelessWidget {
   HomeScreen({super.key});
-
   final ApiService apiService = ApiService();
   final AudioRecorder audioRecorder = AudioRecorder();
   final AudioRecorder audioRecorder2 = AudioRecorder();
-  final List<double> wavePoints =
-      List.generate(100, (index) => Random().nextDouble() * 2 - 1);
-
   //Functions for moore to English
   Future<void> stopRecordingAndSave() async {
     // récupérer le lien de l'audio enregistré
@@ -30,7 +24,6 @@ class HomeScreen extends StatelessWidget {
       doMooreToEnglishPrediction();
     }
   }
-
   Future<void> record() async {
     if (await audioRecorder.hasPermission()) {
       final Directory appDocumentsDir =
@@ -45,7 +38,6 @@ class HomeScreen extends StatelessWidget {
       Controller.instance.setRecordingTrue();
     }
   }
-
   Future<void> doMooreToEnglishPrediction() async {
     String recordingPath = Controller.instance.recordingPath.value;
     File audioFile = File(recordingPath);
@@ -125,27 +117,7 @@ class HomeScreen extends StatelessWidget {
           children: <Widget>[
             Column(
               children: [
-                Container(
-                  child: Stack(children: [
-                    Opacity(
-                      opacity: 0.5,
-                      child: ClipPath(
-                        clipper: WaveClipper(),
-                        child: Container(
-                          color: niceColor,
-                          height: 200,
-                        ),
-                      ),
-                    ),
-                    ClipPath(
-                      clipper: WaveClipper(),
-                      child: Container(
-                        color: niceColor,
-                        height: 180,
-                      ),
-                    ),
-                  ]),
-                ),
+               const Curve(),
                 Obx(() => Controller.instance.isRecording.value ||
                         Controller.instance.isRecording2.value ||
                         Controller.instance.isPlaying.value ||
@@ -195,7 +167,7 @@ class HomeScreen extends StatelessWidget {
                         height: 100,
                         width: 100,
                         child: Controller.instance.isRecording.value
-                            ? const Icon(Icons.stop)
+                            ? const Icon(Icons.stop, color: Colors.white, size: 40,)
                             :   CircleAvatar(
                               backgroundColor: niceColor,
                               radius: 68,
@@ -226,7 +198,7 @@ class HomeScreen extends StatelessWidget {
                       width: 100,                            
                       child:   
                             Controller.instance.isRecording2.value
-                                ? const Icon(Icons.stop)
+                                ? const Icon(Icons.stop, color: Colors.white, size: 40,)
                                 :    CircleAvatar(
                               backgroundColor: niceColor,
                               radius: 68,
@@ -244,6 +216,37 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class Curve extends StatelessWidget {
+  const Curve({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      child: Stack(children: [
+        Opacity(
+          opacity: 0.5,
+          child: ClipPath(
+            clipper: WaveClipper(),
+            child: Container(
+              color: niceColor,
+              height: 200,
+            ),
+          ),
+        ),
+        ClipPath(
+          clipper: WaveClipper(),
+          child: Container(
+            color: niceColor,
+            height: 180,
+          ),
+        ),
+      ]),
     );
   }
 }

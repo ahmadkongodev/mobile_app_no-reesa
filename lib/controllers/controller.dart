@@ -1,12 +1,10 @@
- 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:just_audio/just_audio.dart'; 
+import 'package:just_audio/just_audio.dart';
 
 import '../service.dart';
 
 class Controller extends GetxController {
-  
   final ApiService apiService = ApiService();
   static Controller get instance => Get.find();
 
@@ -61,44 +59,57 @@ class Controller extends GetxController {
     super.onInit();
   }
 
-  Future<void>   playAudio2(String path) async {
+  Future<void> playAudio2(String path) async {
     if (path.isNotEmpty) {
-     try {
-      await audioPlayer2.setFilePath(path);
-      await audioPlayer2.play();
-      
-      setTranslatedAudioPathToNull2();
-    } catch (e) {
-      Controller.instance.showErrorDialog("erreur");
-    }
-      
-    }
-  }
-  
-  Future<void>   playAudio(String path) async {
- 
-    if (path.isNotEmpty) {
-      await audioPlayer.setFilePath(path);
-      await audioPlayer.play();
-       setTranslatedAudioPathToNull();
+      setPlayingTrue2();
+      try {
+        await audioPlayer2.setFilePath(path);
+        await audioPlayer2.play();
+
+        audioPlayer.playerStateStream.listen((state) {
+          if (state.processingState == ProcessingState.completed) {
+            setPlayingFalse2(); // Set playing state to false when playback ends
+          }
+        });
+      } catch (e) {
+        setPlayingFalse2();
+        Controller.instance.showErrorDialog("erreur");
       }
+      setTranslatedAudioPathToNull2();
+    }
   }
 
-  
-void showErrorDialog(String message) {
+  Future<void> playAudio(String path) async {
+    if (path.isNotEmpty) {
+      setPlayingTrue();
+      try {
+        await audioPlayer.setFilePath(path);
+        await audioPlayer.play();
+        audioPlayer.playerStateStream.listen((state) {
+          if (state.processingState == ProcessingState.completed) {
+            setPlayingFalse(); // Set playing state to false when playback ends
+          }
+        });
+      } catch (e) {
+        setPlayingFalse(); // Ensure playing state is set to false if there's an error
+        showErrorDialog("erreur");
+      }
+      setTranslatedAudioPathToNull();
+    }
+  }
+
+  void showErrorDialog(String message) {
     Get.defaultDialog(
       title: "Error",
       middleText: message,
       textConfirm: "OK",
       buttonColor: Colors.red,
-       onConfirm: () {
+      onConfirm: () {
         Get.back();
       },
     );
   }
-   
 }
 
 final AudioPlayer audioPlayer = AudioPlayer();
 final AudioPlayer audioPlayer2 = AudioPlayer();
-
